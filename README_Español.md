@@ -3,8 +3,8 @@
 
   <h1>Acerca del Código</h1>
     <p>Este programa en C++ es un <strong>Sistema de Gestión de Estudiantes Universitarios</strong> diseñado para administrar, inscribir, buscar y eliminar estudiantes universitarios. Proporciona una interfaz amigable basada en menús que permite a los usuarios realizar diversas operaciones relacionadas con la administración de estudiantes.</p>
-
-  <br><br>
+<br>
+  <br>
     <h1 align="center">Documentación del Código - Sistema de Gestión de Estudiantes Universitarios</h1>
 
   <h2>1. Librerías Incluidas</h2>
