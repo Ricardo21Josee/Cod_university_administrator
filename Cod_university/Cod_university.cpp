@@ -4,20 +4,18 @@
 #include <ctime>
 #include <map>
 #include <memory>
-#include <algorithm> // Para usar sort
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <cstdlib>
-#endif
+#include <algorithm>
+#include <fstream>
+#include "json.hpp"
 
 using namespace std;
+using json = nlohmann::json;
 
 // Declaraciones de funciones
 void limpiarPantalla();
 int calcularEdad(const string& fechaNacimiento);
-string seleccionarFacultad(); // Declaración de seleccionarFacultad
-string seleccionarCarrera(const string& facultad); // Declaración de seleccionarCarrera
+string seleccionarFacultad();
+string seleccionarCarrera(const string& facultad);
 bool preguntarContinuar();
 
 // Función para limpiar la pantalla
@@ -33,7 +31,12 @@ void limpiarPantalla() {
 int calcularEdad(const string& fechaNacimiento) {
     time_t ahora = time(0);
     tm fechaActual;
-    localtime_s(&fechaActual, &ahora); // Usar localtime_s en lugar de localtime
+
+#ifdef _WIN32
+    localtime_s(&fechaActual, &ahora);
+#else
+    localtime_r(&ahora, &fechaActual);
+#endif
 
     int anioActual = fechaActual.tm_year + 1900;
     int mesActual = fechaActual.tm_mon + 1;
@@ -156,7 +159,8 @@ protected:
 
 public:
     Estudiante(string carnet, string n1, string n2, string a1, string a2, string fecha, string sec, string carr, int sem)
-        : carnet(carnet), nombre1(n1), nombre2(n2), apellido1(a1), apellido2(a2), fechaNacimiento(fecha), seccion(sec), carrera(carr), semestre(sem) {
+        : carnet(carnet), nombre1(n1), nombre2(n2), apellido1(a1), apellido2(a2),
+        fechaNacimiento(fecha), seccion(sec), carrera(carr), semestre(sem) {
     }
 
     void agregarCurso(const string& curso) {
@@ -203,8 +207,88 @@ public:
         return cursos;
     }
 
+    json toJson() const {
+        return {
+            {"carnet", carnet},
+            {"nombre1", nombre1},
+            {"nombre2", nombre2},
+            {"apellido1", apellido1},
+            {"apellido2", apellido2},
+            {"fechaNacimiento", fechaNacimiento},
+            {"seccion", seccion},
+            {"carrera", carrera},
+            {"semestre", semestre},
+            {"cursos", cursos}
+        };
+    }
+
     virtual ~Estudiante() = default;
 };
+
+// Función para cargar estudiantes desde un archivo JSON
+vector<unique_ptr<Estudiante>> cargarEstudiantesDesdeJSON(const string& filename) {
+    vector<unique_ptr<Estudiante>> estudiantes;
+    ifstream file(filename);
+
+    if (!file.is_open()) {
+        cout << "No se encontró el archivo " << filename << ". Se creará uno nuevo al guardar." << endl;
+        return estudiantes;
+    }
+
+    try {
+        json j;
+        file >> j;
+
+        if (j.contains("estudiantes")) {
+            for (const auto& estudianteJson : j["estudiantes"]) {
+                auto est = make_unique<Estudiante>(
+                    estudianteJson["carnet"].get<string>(),
+                    estudianteJson["nombre1"].get<string>(),
+                    estudianteJson["nombre2"].get<string>(),
+                    estudianteJson["apellido1"].get<string>(),
+                    estudianteJson["apellido2"].get<string>(),
+                    estudianteJson["fechaNacimiento"].get<string>(),
+                    estudianteJson["seccion"].get<string>(),
+                    estudianteJson["carrera"].get<string>(),
+                    estudianteJson["semestre"].get<int>()
+                );
+
+                if (estudianteJson.contains("cursos")) {
+                    for (const auto& curso : estudianteJson["cursos"]) {
+                        est->agregarCurso(curso.get<string>());
+                    }
+                }
+
+                estudiantes.push_back(move(est));
+            }
+            cout << "Datos cargados correctamente desde " << filename << endl;
+        }
+    }
+    catch (const exception& e) {
+        cout << "Error al cargar el archivo JSON: " << e.what() << endl;
+    }
+
+    return estudiantes;
+}
+
+// Función para guardar estudiantes en un archivo JSON
+void guardarEstudiantesEnJSON(const vector<unique_ptr<Estudiante>>& estudiantes, const string& filename) {
+    json j;
+    j["estudiantes"] = json::array();
+
+    for (const auto& est : estudiantes) {
+        j["estudiantes"].push_back(est->toJson());
+    }
+
+    ofstream file(filename);
+    if (file.is_open()) {
+        file << j.dump(4);
+        cout << "Datos guardados correctamente en " << filename << endl;
+    }
+    else {
+        cout << "No se pudo abrir el archivo " << filename << " para guardar." << endl;
+    }
+}
 
 // Función para buscar un estudiante por carnet en todas las carreras
 void buscarPorCarnet(const vector<unique_ptr<Estudiante>>& estudiantes, const string& carnet) {
@@ -290,7 +374,7 @@ void mostrarEstudiantesPorCarreraSeccion(const vector<unique_ptr<Estudiante>>& e
 
     // Ordenar estudiantes por nombre
     sort(estudiantesFiltrados.begin(), estudiantesFiltrados.end(), [](Estudiante* a, Estudiante* b) {
-        return a->getCarnet() < b->getCarnet(); // Ordenar por carnet (puedes cambiar a nombre si lo prefieres)
+        return a->getCarnet() < b->getCarnet();
         });
 
     // Mostrar estudiantes
@@ -392,10 +476,11 @@ map<string, map<int, vector<string>>> cursosPorCarrera = {
 
 // Función para asignar cursos a un semestre
 vector<string> obtenerCursosPorSemestre(const string& carrera, int semestre) {
-    if (cursosPorCarrera.find(carrera) != cursosPorCarrera.end()) {
-        auto& semestres = cursosPorCarrera[carrera];
-        if (semestres.find(semestre) != semestres.end()) {
-            return semestres[semestre];
+    auto it_carrera = cursosPorCarrera.find(carrera);
+    if (it_carrera != cursosPorCarrera.end()) {
+        auto it_semestre = it_carrera->second.find(semestre);
+        if (it_semestre != it_carrera->second.end()) {
+            return it_semestre->second;
         }
     }
     return {};
@@ -413,7 +498,7 @@ bool preguntarContinuar() {
 
 // Función principal
 void gestionarEstudiantes() {
-    vector<unique_ptr<Estudiante>> estudiantes;
+    vector<unique_ptr<Estudiante>> estudiantes = cargarEstudiantesDesdeJSON("datos.json");
     int opcion;
 
     do {
@@ -496,7 +581,7 @@ void gestionarEstudiantes() {
             for (const string& curso : cursos) {
                 est->agregarCurso(curso);
             }
-            estudiantes.push_back(std::move(est));
+            estudiantes.push_back(move(est));
             limpiarPantalla();
             cout << "Facultad: " << facultad << "\n";
             cout << "Carrera: " << carrera << "\n";
@@ -505,6 +590,7 @@ void gestionarEstudiantes() {
             cout << "Estudiante asignado correctamente.\n";
 
             if (!preguntarContinuar()) {
+                guardarEstudiantesEnJSON(estudiantes, "datos.json");
                 break;
             }
         }
@@ -528,6 +614,7 @@ void gestionarEstudiantes() {
             }
 
             if (!preguntarContinuar()) {
+                guardarEstudiantesEnJSON(estudiantes, "datos.json");
                 break;
             }
         }
@@ -540,6 +627,7 @@ void gestionarEstudiantes() {
             buscarPorCarnet(estudiantes, carnet);
 
             if (!preguntarContinuar()) {
+                guardarEstudiantesEnJSON(estudiantes, "datos.json");
                 break;
             }
         }
@@ -567,10 +655,13 @@ void gestionarEstudiantes() {
             }
 
             if (!preguntarContinuar()) {
+                guardarEstudiantesEnJSON(estudiantes, "datos.json");
                 break;
             }
         }
     } while (opcion != 5);
+
+    guardarEstudiantesEnJSON(estudiantes, "datos.json");
 }
 
 int main() {
