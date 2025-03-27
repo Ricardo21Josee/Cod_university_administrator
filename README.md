@@ -9,7 +9,7 @@
         <h2>JSON Data Storage</h2>
         <p>The system now features complete JSON integration for persistent data storage:</p>
         <ul>
-            <li><strong>Automatic Saving</strong>: All student records are automatically saved to <code>students.json</code> after each operation</li>
+            <li><strong>Automatic Saving</strong>: All student records are automatically saved to <code>datos.json</code> after each operation</li>
             <li><strong>Data Persistence</strong>: Student information is preserved between program executions</li>
             <li><strong>Easy Data Transfer</strong>: JSON format allows seamless data exchange with web applications and other systems</li>
             <li><strong>Backup Ready</strong>: Simple file copying creates instant backups of all student data</li>
