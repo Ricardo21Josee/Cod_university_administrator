@@ -1,11 +1,10 @@
 <h1 align="center"><b>Código para un Sistema de Administración de Estudiantes Universitarios</b><img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="35"></h1>
-    <br>
-
-  <h1>Acerca del Código</h1>
-    <p>Este programa en C++ es un <strong>Sistema de Gestión de Estudiantes Universitarios</strong> diseñado para administrar, inscribir, buscar y eliminar estudiantes universitarios. Proporciona una interfaz amigable basada en menús que permite a los usuarios realizar diversas operaciones relacionadas con la administración de estudiantes.</p>
 <br>
-  <br>
-    <h1 align="center">Documentación del Código - Sistema de Gestión de Estudiantes Universitarios</h1>
+
+<h1>Acerca del Código</h1>
+<p>Este programa en C++ es un <strong>Sistema de Gestión de Estudiantes Universitarios</strong> diseñado para administrar, inscribir, buscar y eliminar estudiantes universitarios. Proporciona una interfaz amigable basada en menús que permite a los usuarios realizar diversas operaciones relacionadas con la administración de estudiantes. El sistema ahora incluye la capacidad de guardar y cargar datos de estudiantes en formato JSON, proporcionando almacenamiento persistente entre ejecuciones del programa.</p>
+
+<h1 align="center">Documentación del Código - Sistema de Gestión de Estudiantes Universitarios</h1>
 
   <h2>1. Librerías Incluidas</h2>
     <p>El código utiliza varias librerías de C++ para su funcionamiento:</p>
@@ -274,6 +273,18 @@ int main() {
         <li><strong>Eliminar estudiantes</strong>: Remover estudiantes del sistema.</li>
     </ul>
     <p>Las librerías y estructuras utilizadas permiten un manejo eficiente de la información y una interacción amigable con el usuario.</p>
+<br>
+<h2>Nueva Función de Almacenamiento JSON</h2>
+<p>El sistema ahora incluye funcionalidad para guardar y cargar datos de estudiantes en formato JSON:</p>
+<ul>
+    <li><strong>Guardado Automático</strong>: Los datos de los estudiantes se guardan automáticamente en un archivo JSON cuando se realizan cambios</li>
+    <li><strong>Persistencia de Datos</strong>: La información de los estudiantes persiste entre ejecuciones del programa</li>
+    <li><strong>Datos Portables</strong>: El formato JSON permite fácil intercambio de datos con otros sistemas</li>
+    <li><strong>Capacidad de Respaldo</strong>: Los archivos JSON pueden servir como copias de seguridad de los registros estudiantiles</li>
+</ul>
+
+<p>La estructura del archivo JSON organiza los datos de estudiantes por facultad, carrera y sección, manteniendo todas las relaciones presentes en la memoria del programa. Cuando el programa inicia, carga automáticamente cualquier dato existente de estudiantes desde el archivo JSON.</p>
+
 
 <br><br>
   <h1 align="center">Cómo Funciona</h1>
