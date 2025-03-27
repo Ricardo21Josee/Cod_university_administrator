@@ -1,11 +1,8 @@
 <h1 align="center"><b>Code for a University Student Administration System</b><img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="35"></h1>
 <br>
 
-
-
-
 <h1>About the Code</h1>
-    <p>This C++ program is a <strong>University Student Management System</strong> designed to manage, enroll, search, and delete university students. It provides a user-friendly, menu-driven interface that allows users to perform various operations related to student administration.</p>
+<p>This C++ program is a <strong>University Student Management System</strong> designed to manage, enroll, search, and delete university students. It provides a user-friendly, menu-driven interface that allows users to perform various operations related to student administration. The system now includes the capability to save and load student data in JSON format, providing persistent storage between program executions.</p>
 
 
 
@@ -280,8 +277,17 @@ int main() {
     </ul>
     <p>The libraries and structures used enable efficient information management and user-friendly interaction.</p>
 
+<br>
+<h2>New JSON Storage Feature</h2>
+<p>The system now includes functionality to save and load student data in JSON format:</p>
+<ul>
+    <li><strong>Automatic Saving</strong>: Student data is automatically saved to a JSON file whenever changes are made</li>
+    <li><strong>Data Persistence</strong>: Student information persists between program executions</li>
+    <li><strong>Portable Data</strong>: JSON format allows easy data exchange with other systems</li>
+    <li><strong>Backup Capability</strong>: JSON files can serve as backups of student records</li>
+</ul>
 
-
+<p>The JSON file structure organizes student data by faculty, major, and section, maintaining all the relationships present in the program's memory. When the program starts, it automatically loads any existing student data from the JSON file.</p>
 
 
 
