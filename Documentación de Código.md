@@ -1,602 +1,252 @@
 <h1 align="center"><b>Código para un Sistema de Administración de Estudiantes Universitarios</b><img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="35"></h1>
 <br>
+<div class="feature-box">
+    <h2>Acerca del Sistema</h2>
+    <p>Este programa en C++ es un Sistema Integral de Gestión Estudiantil Universitario diseñado para administrar, matricular, buscar y eliminar estudiantes universitarios. Proporciona una interfaz amigable basada en menús para todas las operaciones de administración estudiantil con integración completa a base de datos PostgreSQL.</p>
+</div>
 
-<h1>Acerca del Código</h1>
-<p>Este programa en C++ es un <strong>Sistema de Gestión de Estudiantes Universitarios</strong> diseñado para administrar, inscribir, buscar y eliminar estudiantes universitarios. Proporciona una interfaz amigable basada en menús que permite a los usuarios realizar diversas operaciones relacionadas con la administración de estudiantes. El sistema ahora incluye la capacidad de guardar y cargar datos de estudiantes en formato JSON, proporcionando almacenamiento persistente entre ejecuciones del programa.</p>
-
-<h1 align="center">Documentación del Código - Sistema de Gestión de Estudiantes Universitarios</h1>
-
-  <h2>1. Librerías Incluidas</h2>
-    <p>El código utiliza varias librerías de C++ para su funcionamiento:</p>
-    <pre><code>
-#include &lt;iostream&gt;
-#include &lt;vector&gt;
-#include &lt;string&gt;
-#include &lt;ctime&gt;
-#include &lt;map&gt;
-#include &lt;memory&gt;
-#include &lt;algorithm&gt; // Para usar sort
-#ifdef _WIN32
-#include &lt;windows.h&gt;
-#else
-#include &lt;cstdlib&gt;
-#endif
-    </code></pre>
-    <p><strong>Explicación de las librerías:</strong></p>
+<div class="database-feature">
+    <h2>Integración con PostgreSQL</h2>
+    <p>El sistema cuenta con integración completa con base de datos PostgreSQL para almacenamiento persistente:</p>
     <ul>
-        <li><code>&lt;iostream&gt;</code>: Proporciona funcionalidades para la entrada y salida estándar (como <code>cin</code> y <code>cout</code>).</li>
-        <li><code>&lt;vector&gt;</code>: Permite el uso de vectores, que son arreglos dinámicos para almacenar datos.</li>
-        <li><code>&lt;string&gt;</code>: Facilita el manejo de cadenas de texto.</li>
-        <li><code>&lt;ctime&gt;</code>: Proporciona funciones para trabajar con fechas y horas (usado para calcular la edad).</li>
-        <li><code>&lt;map&gt;</code>: Permite el uso de mapas, que son contenedores asociativos para almacenar pares clave-valor.</li>
-        <li><code>&lt;memory&gt;</code>: Facilita el uso de punteros inteligentes (<code>unique_ptr</code>), que ayudan a gestionar la memoria automáticamente.</li>
-        <li><code>&lt;algorithm&gt;</code>: Proporciona funciones útiles como <code>sort</code> para ordenar elementos.</li>
-        <li><code>#ifdef _WIN32</code>: Condicional para detectar si el sistema operativo es Windows. Si es así, se incluye <code>&lt;windows.h&gt;</code> para usar <code>system("cls")</code>. En otros sistemas, se usa <code>&lt;cstdlib&gt;</code> para <code>system("clear")</code>.</li>
+        <li><strong>Almacenamiento confiable</strong>: Todos los registros se guardan de forma segura en PostgreSQL</li>
+        <li><strong>Cumplimiento ACID</strong>: Garantiza integridad de datos con soporte para transacciones</li>
+        <li><strong>Solución escalable</strong>: Maneja grandes volúmenes de registros eficientemente</li>
+        <li><strong>Búsquedas avanzadas</strong>: Permite búsquedas complejas y generación de reportes</li>
+        <li><strong>Organización estructurada</strong>: Datos organizados en esquema normalizado</li>
+        <li><strong>Generación automática de carnets</strong>: Los IDs se generan basados en códigos de carrera y año</li>
     </ul>
+</div>
 
-  <h2>2. Declaraciones de Funciones</h2>
-    <p>El código declara varias funciones para modularizar la lógica del programa:</p>
-    <pre><code>
-void limpiarPantalla();
-int calcularEdad(const string& fechaNacimiento);
-string seleccionarFacultad();
-string seleccionarCarrera(const string& facultad);
-bool preguntarContinuar();
-    </code></pre>
-    <p><strong>Explicación de las funciones:</strong></p>
-    <ul>
-        <li><code>limpiarPantalla()</code>: Limpia la consola para mejorar la legibilidad.</li>
-        <li><code>calcularEdad()</code>: Calcula la edad del estudiante a partir de su fecha de nacimiento.</li>
-        <li><code>seleccionarFacultad()</code>: Muestra un menú para seleccionar la facultad del estudiante.</li>
-        <li><code>seleccionarCarrera()</code>: Muestra un menú para seleccionar la carrera, dependiendo de la facultad elegida.</li>
-        <li><code>preguntarContinuar()</code>: Pregunta al usuario si desea realizar otra operación o salir del programa.</li>
-    </ul>
-
-  <h2>3. Función <code>limpiarPantalla()</code></h2>
-    <p>Esta función limpia la pantalla de la consola:</p>
-    <pre><code>
-void limpiarPantalla() {
-#ifdef _WIN32
-    system("cls");
-#else
-    system("clear");
-#endif
-}
-    </code></pre>
-    <p><strong>Funcionamiento:</strong></p>
-    <ul>
-        <li>Usa <code>system("cls")</code> en Windows y <code>system("clear")</code> en otros sistemas operativos.</li>
-    </ul>
-
-  <h2>4. Función <code>calcularEdad()</code></h2>
-    <p>Esta función calcula la edad del estudiante a partir de su fecha de nacimiento:</p>
-    <pre><code>
-int calcularEdad(const string& fechaNacimiento) {
-    time_t ahora = time(0);
-    tm fechaActual;
-    localtime_s(&fechaActual, &ahora);
-
-  int anioActual = fechaActual.tm_year + 1900;
-    int mesActual = fechaActual.tm_mon + 1;
-    int diaActual = fechaActual.tm_mday;
-
-  int diaNacimiento = stoi(fechaNacimiento.substr(0, 2));
-    int mesNacimiento = stoi(fechaNacimiento.substr(3, 2));
-    int anioNacimiento = stoi(fechaNacimiento.substr(6, 4));
-
-  int edad = anioActual - anioNacimiento;
-
-  if (mesActual &lt; mesNacimiento || (mesActual == mesNacimiento && diaActual &lt; diaNacimiento)) {
-        edad--;
-    }
-
-  return edad;
-}
-    </code></pre>
-    <p><strong>Funcionamiento:</strong></p>
-    <ul>
-        <li>Obtiene la fecha actual usando <code>time()</code> y <code>localtime_s()</code>.</li>
-        <li>Compara la fecha de nacimiento con la fecha actual para calcular la edad.</li>
-    </ul>
-
-  <h2>5. Clase <code>Estudiante</code></h2>
-    <p>La clase <code>Estudiante</code> representa a un estudiante con sus datos personales, académicos y cursos:</p>
-    <pre><code>
-class Estudiante {
-protected:
-    string carnet;
-    string nombre1;
-    string nombre2;
-    string apellido1;
-    string apellido2;
-    string fechaNacimiento;
-    string seccion;
-    string carrera;
-    int semestre;
-    vector&lt;string&gt; cursos;
-
-public:
-    Estudiante(string carnet, string n1, string n2, string a1, string a2, string fecha, string sec, string carr, int sem)
-        : carnet(carnet), nombre1(n1), nombre2(n2), apellido1(a1), apellido2(a2), fechaNacimiento(fecha), seccion(sec), carrera(carr), semestre(sem) {
-    }
-
-  void agregarCurso(const string& curso) {
-        cursos.push_back(curso);
-    }
-
-  virtual void mostrarInfo() const {
-        int edad = calcularEdad(fechaNacimiento);
-        cout &lt;&lt; "--------------------------\n";
-        cout &lt;&lt; "Información del Estudiante\n";
-        cout &lt;&lt; "--------------------------\n";
-        cout &lt;&lt; "Carnet: " &lt;&lt; carnet &lt;&lt; endl;
-        cout &lt;&lt; "Nombre: " &lt;&lt; nombre1 &lt;&lt; " " &lt;&lt; nombre2 &lt;&lt; " " &lt;&lt; apellido1 &lt;&lt; " " &lt;&lt; apellido2 &lt;&lt; endl;
-        cout &lt;&lt; "Fecha de Nacimiento: " &lt;&lt; fechaNacimiento &lt;&lt; endl;
-        cout &lt;&lt; "Edad: " &lt;&lt; edad &lt;&lt; " años" &lt;&lt; endl;
-        cout &lt;&lt; "Carrera: " &lt;&lt; carrera &lt;&lt; endl;
-        cout &lt;&lt; "Semestre: " &lt;&lt; semestre &lt;&lt; endl;
-        cout &lt;&lt; "Sección: " &lt;&lt; seccion &lt;&lt; endl;
-        cout &lt;&lt; "--------------------------\n";
-        cout &lt;&lt; "Cursos:\n";
-        for (size_t i = 0; i &lt; cursos.size(); ++i) {
-            cout &lt;&lt; "  " &lt;&lt; i + 1 &lt;&lt; ". " &lt;&lt; cursos[i] &lt;&lt; endl;
-        }
-        cout &lt;&lt; "----------------------\n";
-    }
-
-  string getCarnet() const {
-        return carnet;
-    }
-
-  string getSeccion() const {
-        return seccion;
-    }
-
-  string getCarrera() const {
-        return carrera;
-    }
-
-  int getSemestre() const {
-        return semestre;
-    }
-
-  const vector&lt;string&gt;& getCursos() const {
-        return cursos;
-    }
-
-  virtual ~Estudiante() = default;
-};
-    </code></pre>
-    <p><strong>Explicación:</strong></p>
-    <ul>
-        <li>Almacena información como carnet, nombres, apellidos, fecha de nacimiento, sección, carrera y semestre.</li>
-        <li>Incluye métodos para agregar cursos y mostrar la información del estudiante.</li>
-    </ul>
-
-  <h2>6. Funciones de Búsqueda y Visualización</h2>
-    <p>El código incluye funciones para buscar y mostrar estudiantes:</p>
-    <pre><code>
-void buscarPorCarnet(const vector&lt;unique_ptr&lt;Estudiante&gt;&gt;& estudiantes, const string& carnet);
-void mostrarEstudiantesPorSemestre(const vector&lt;unique_ptr&lt;Estudiante&gt;&gt;& estudiantes, int semestre, const string& seccion);
-void mostrarTodosEstudiantesAgrupados(const vector&lt;unique_ptr&lt;Estudiante&gt;&gt;& estudiantes);
-void mostrarEstudiantesPorCarreraSeccion(const vector&lt;unique_ptr&lt;Estudiante&gt;&gt;& estudiantes);
-    </code></pre>
-    <p><strong>Explicación:</strong></p>
-    <ul>
-        <li><code>buscarPorCarnet()</code>: Busca un estudiante por su carnet y muestra su información.</li>
-        <li><code>mostrarEstudiantesPorSemestre()</code>: Muestra estudiantes de un semestre y sección específicos.</li>
-        <li><code>mostrarTodosEstudiantesAgrupados()</code>: Agrupa y muestra todos los estudiantes por facultad, carrera y sección.</li>
-        <li><code>mostrarEstudiantesPorCarreraSeccion()</code>: Muestra estudiantes de una carrera y sección en orden alfabético.</li>
-    </ul>
-
-  <h2>7. Función Principal <code>gestionarEstudiantes()</code></h2>
-    <p>Esta función controla el flujo principal del programa:</p>
-    <pre><code>
-void gestionarEstudiantes() {
-    vector&lt;unique_ptr&lt;Estudiante&gt;&gt; estudiantes;
-    int opcion;
-
-  do {
-        // Menú principal
-    } while (opcion != 5);
-}
-    </code></pre>
-    <p><strong>Funcionamiento:</strong></p>
-    <ul>
-        <li>Muestra un menú con opciones para asignar, mostrar, buscar o eliminar estudiantes.</li>
-        <li>Usa un bucle <code>do-while</code> para mantener el programa en ejecución hasta que el usuario elija salir.</li>
-    </ul>
-
-  <h2>8. Función <code>main()</code></h2>
-    <p>Punto de entrada del programa:</p>
-    <pre><code>
-int main() {
-    gestionarEstudiantes();
-    return 0;
-}
-    </code></pre>
-    <p><strong>Funcionamiento:</strong></p>
-    <ul>
-        <li>Llama a la función <code>gestionarEstudiantes()</code> para iniciar el programa.</li>
-    </ul>
-
-  <h2>9. Resumen de Librerías y su Uso</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Librería</th>
-                <th>Propósito</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><code>&lt;iostream&gt;</code></td>
-                <td>Entrada y salida estándar (cin, cout).</td>
-            </tr>
-            <tr>
-                <td><code>&lt;vector&gt;</code></td>
-                <td>Almacenar y gestionar listas dinámicas de estudiantes.</td>
-            </tr>
-            <tr>
-                <td><code>&lt;string&gt;</code></td>
-                <td>Manejo de cadenas de texto (nombres, carreras, etc.).</td>
-            </tr>
-            <tr>
-                <td><code>&lt;ctime&gt;</code></td>
-                <td>Cálculo de la edad a partir de la fecha de nacimiento.</td>
-            </tr>
-            <tr>
-                <td><code>&lt;map&gt;</code></td>
-                <td>Agrupar estudiantes por facultad, carrera y sección.</td>
-            </tr>
-            <tr>
-                <td><code>&lt;memory&gt;</code></td>
-                <td>Uso de <code>unique_ptr</code> para gestionar la memoria de los estudiantes.</td>
-            </tr>
-            <tr>
-                <td><code>&lt;algorithm&gt;</code></td>
-                <td>Ordenar estudiantes alfabéticamente.</td>
-            </tr>
-            <tr>
-                <td><code>&lt;windows.h&gt;</code>/<code>&lt;cstdlib&gt;</code></td>
-                <td>Limpiar la pantalla de la consola según el sistema operativo.</td>
-            </tr>
-        </tbody>
-    </table>
-
-  <h2>10. Conclusión</h2>
-    <p>Este código es un sistema de gestión de estudiantes universitarios que permite:</p>
-    <ul>
-        <li><strong>Asignar estudiantes</strong>: Registrar nuevos estudiantes con sus datos personales y académicos.</li>
-        <li><strong>Mostrar estudiantes</strong>: Visualizar la información de los estudiantes agrupados por facultad, carrera y sección.</li>
-        <li><strong>Buscar estudiantes</strong>: Encontrar estudiantes por su carnet.</li>
-        <li><strong>Eliminar estudiantes</strong>: Remover estudiantes del sistema.</li>
-    </ul>
-    <p>Las librerías y estructuras utilizadas permiten un manejo eficiente de la información y una interacción amigable con el usuario.</p>
-<br>
-<h2>Nueva Función de Almacenamiento JSON</h2>
-<p>El sistema ahora incluye funcionalidad para guardar y cargar datos de estudiantes en formato JSON:</p>
+<h2>Características Principales</h2>
 <ul>
-    <li><strong>Guardado Automático</strong>: Los datos de los estudiantes se guardan automáticamente en un archivo JSON cuando se realizan cambios</li>
-    <li><strong>Persistencia de Datos</strong>: La información de los estudiantes persiste entre ejecuciones del programa</li>
-    <li><strong>Datos Portables</strong>: El formato JSON permite fácil intercambio de datos con otros sistemas</li>
-    <li><strong>Capacidad de Respaldo</strong>: Los archivos JSON pueden servir como copias de seguridad de los registros estudiantiles</li>
+    <li>Sistema completo de matrícula estudiantil por facultades y carreras</li>
+    <li>Asignación de secciones (A/B/C) para agrupamiento organizado</li>
+    <li>Búsqueda avanzada por carnet estudiantil</li>
+    <li>Eliminación segura con confirmación</li>
+    <li>Validación de datos para todos los campos</li>
+    <li>Interfaz limpia basada en menús</li>
+    <li>Asignación automática de cursos por semestre</li>
+    <li>Manejo de conexiones a base de datos con reconexión automática</li>
 </ul>
 
-<p>La estructura del archivo JSON organiza los datos de estudiantes por facultad, carrera y sección, manteniendo todas las relaciones presentes en la memoria del programa. Cuando el programa inicia, carga automáticamente cualquier dato existente de estudiantes desde el archivo JSON.</p>
+<h1 align="center">Documentación Técnica</h1>
 
+<h2>1. Estructura de la Base de Datos</h2>
+<p>El sistema utiliza PostgreSQL con las siguientes tablas principales:</p>
+<ul>
+    <li><strong>estudiantes</strong>: Almacena información personal de estudiantes</li>
+    <li><strong>carreras</strong>: Contiene información de carreras universitarias</li>
+    <li><strong>cursos</strong>: Almacena datos de cursos académicos</li>
+    <li><strong>matriculacion</strong>: Maneja la relación entre estudiantes y cursos</li>
+</ul>
 
-<br><br>
-  <h1 align="center">Cómo Funciona</h1>
-    <p>Muestra un menú inicial que nos permite elegir entre las siguientes opciones:</p>
-    <pre>
-------------
-   Menú
-------------
-1. Asignar estudiante
-2. Mostrar estudiantes
-3. Buscar estudiante por Carnet
-4. Eliminar estudiante
-5. Salir
-Seleccione una opción:
-  </pre>
-    <p>Elegiremos una opción. Al seleccionar la opción 1, nos lleva al siguiente menú:</p>
-    <pre>
-----------
-   Menú
-----------
-1. Finanzas Económicas
-2. Sistemas de Comunicación
-3. Medicina y Salud
-Seleccione una opción:
-    </pre>
-    <p>Dependiendo de la facultad que elijamos, nos llevará a los siguientes menús posibles:</p>
+<h2>2. Clase DatabaseManager</h2>
+<p>Clase central que maneja todas las operaciones con la base de datos:</p>
+<pre><code>
+class DatabaseManager {
+private:
+    PGconn* conn;
+    void verificarConexion(); // Verifica/restaura conexión
+    
+public:
+    DatabaseManager(); // Establece conexión
+    ~DatabaseManager(); // Libera recursos
+    
+  // Métodos principales
+    string generarCarnet(const string& carrera); // Genera ID estudiantil
+    void registrarEstudiante(...); // Registra nuevo estudiante
+    vector&lt;map&lt;string, string&gt;&gt; obtenerTodosEstudiantes(); // Obtiene todos
+    map&lt;string, string&gt; buscarEstudiante(const string& carnet); // Busca
+    bool eliminarEstudiante(const string& carnet); // Elimina
+    void verificarEstructuraBD(); // Valida estructura BD
+};
+</code></pre>
 
-  <h3>Menú 1:</h3>
-    <pre>
-----------
-   Menú
-----------
-Facultad: Finanzas Económicas
-1. Administración de Empresas
-2. Auditoría
-Seleccione una opción:
-    </pre>
+<h2>3. Funciones Clave</h2>
 
-  <h3>Menú 2:</h3>
-    <pre>
-----------
-   Menú
-----------
-Facultad: Sistemas de Comunicación
-1. Ingeniería en Sistemas
-2. Arquitectura de Redes
-Seleccione una opción:
-    </pre>
+<h3>Manejo de Conexiones</h3>
+<pre><code>
+DatabaseManager::DatabaseManager() {
+    string conn_str = "host=localhost dbname=gestion_universitaria "
+                   "user=ricardo password=ricgio921 port=5432";
+    conn = PQconnectdb(conn_str.c_str());
+    // Manejo de errores omitido por brevedad
+}
+</code></pre>
 
-  <h3>Menú 3:</h3>
-    <pre>
-----------
-   Menú
-----------
-Facultad: Medicina y Salud
-1. Medicina General
-2. Traumatología
-3. Pediatría
-Seleccione una opción:
-    </pre>
+<h3>Generación de Carnets</h3>
+<pre><code>
+string DatabaseManager::generarCarnet(const string& carrera) {
+    // Formato: [CódigoCarrera]-[Últimos2DígitosAño]-[Secuencia5Dígitos]
+    // Ejemplo: 1030-24-00001 para Ingeniería en Sistemas en 2024
+}
+</code></pre>
 
-  <p>Después de seleccionar nuestra facultad y carrera, aparecerá lo siguiente:</p>
-    <p>En la parte superior, se mostrará la facultad y la carrera que seleccionamos. Por ejemplo:</p>
-    <pre>
-Facultad: Sistemas de Comunicación
-Carrera: Ingeniería en Sistemas
--------------------
-Menú de Asignación
--------------------
-1. Semestre I
-2. Semestre II
-3. Semestre III
-4. Semestre IV
-5. Semestre V
-6. Semestre VI
-7. Semestre VII
-8. Semestre VIII
-9. Semestre IX
-10. Semestre X
-Seleccione el semestre:
-    </pre>
+<h3>Registro de Estudiantes</h3>
+<pre><code>
+void DatabaseManager::registrarEstudiante(...) {
+    // Inserta registro de estudiante
+    // Luego inserta todos sus cursos matriculados
+    // Usa transacciones para integridad de datos
+}
+</code></pre>
 
-  <p>Después de elegir el semestre, nos preguntará en qué sección deseamos inscribir al estudiante:</p>
-    <pre>
-Facultad: Sistemas de Comunicación
-Carrera: Ingeniería en Sistemas
-Semestre: 1
-Seleccione la sección (A/B): A
-    </pre>
+<h2>4. Flujo Principal del Programa</h2>
+<pre><code>
+int main() {
+    try {
+        DatabaseManager db; // Inicializa conexión a BD
+        while (true) {
+            mostrarMenuPrincipal(); // Muestra menú principal
+            // Procesa selección de usuario
+            switch (opcion) {
+                case 1: registrarEstudiante(db); break;
+                case 2: mostrarTodosEstudiantes(db); break;
+                // ... otras opciones
+            }
+        }
+    } catch (...) {
+        // Manejo de errores
+    }
+}
+</code></pre>
 
-  <p>Luego, podremos llenar los datos del estudiante de la siguiente forma:</p>
-    <pre>
-Facultad: Sistemas de Comunicación
-Carrera: Ingeniería en Sistemas
-Semestre: 1
-Sección: A
-Carnet (ejemplo: 2294-24-19629): 2294-24-19629
-Primer nombre: Ricardo
-Segundo nombre: Jose
-Primer apellido: Marquez
-Segundo apellido: Garcia
-Fecha de nacimiento (DD-MM-AAAA): 21/10/2004
-    </pre>
+<h2>5. Validación de Datos</h2>
+<p>El sistema incluye extensa validación de datos:</p>
+<ul>
+    <li>Validación de formato de fecha (DD-MM-AAAA)</li>
+    <li>Validación de campos obligatorios</li>
+    <li>Validación de rango de semestres (1-10)</li>
+    <li>Validación de secciones (A/B/C)</li>
+    <li>Aplicación de restricciones de base de datos</li>
+</ul>
 
-  <p>Al presionar enter, se mostrará lo siguiente:</p>
-    <pre>
-Facultad: Sistemas de Comunicación
-Carrera: Ingeniería en Sistemas
-Semestre: 1
-Sección: A
-Estudiante asignado correctamente.
-¿Desea realizar otra operación? (s/n):
-    </pre>
+<h2>6. Manejo de Errores</h2>
+<p>El sistema incluye manejo completo de errores:</p>
+<ul>
+    <li>Errores de conexión a base de datos</li>
+    <li>Errores en ejecución de consultas</li>
+    <li>Errores de validación de datos</li>
+    <li>Rollback de transacciones en fallos</li>
+</ul>
 
-  <p>Podemos elegir terminar el programa o continuar con otra función. Si presionamos "s", nos llevará al menú inicial.</p>
-    <pre>
-------------
-   Menú
-------------
-1. Asignar estudiante
-2. Mostrar estudiantes
-3. Buscar estudiante por Carnet
-4. Eliminar estudiante
-5. Salir
-Seleccione una opción:
-    </pre>
+<h2>7. Interfaz de Usuario</h2>
+<p>El sistema provee una interfaz basada en consola con:</p>
+<ul>
+    <li>Manejo de pantalla limpia (funciona en Windows y Unix)</li>
+    <li>Salida formateada</li>
+    <li>Validación de entrada</li>
+    <li>Preguntas de confirmación</li>
+</ul>
 
-  <h3>Opción 2: Mostrar Estudiantes</h3>
-    <p>Si elegimos la opción 2, se desplegará el siguiente menú, donde podemos mostrar todos los estudiantes y sus datos o mostrar los estudiantes por carrera y sección en orden alfabético.</p>
-    <pre>
---------
-  Menú
---------
-1. Mostrar todos los estudiantes agrupados por facultad, carrera y sección
-2. Mostrar estudiantes por carrera y sección en orden alfabético
-Seleccione una opción:
-    </pre>
+<h2>8. Gestión de Cursos</h2>
+<p>Los cursos se asignan automáticamente según:</p>
+<pre><code>
+vector&lt;string&gt; obtenerCursosPorSemestre(const string& carrera, int semestre) {
+    // Devuelve cursos predefinidos para cada carrera/semestre
+    // Ejemplo: Semestre 1 de Ingeniería en Sistemas:
+    // - Introducción a la Programación
+    // - Matemáticas Básicas
+    // - Física I
+    // - Lógica de Sistemas
+    // - Informática I
+}
+</code></pre>
 
-  <p>Si seleccionamos la opción 1, se mostrará algo como lo siguiente:</p>
-    <pre>
-Facultad: Finanzas Económicas
-Carrera: Auditoría
-Sección: A
---------------------------
-Información del Estudiante
---------------------------
-Carnet: 2294-24-19458
-Nombre: Emily Giovanna Yancoba Ixcotop
-Fecha de Nacimiento: 09/02/2005
-Edad: 20 años
-Carrera: Auditoría
-Semestre: 1
-Sección: A
---------------------------
-Cursos:
-  1. Introducción a la Auditoría
-  2. Matemáticas Básicas
-  3. Contabilidad I
-  4. Economía General
-  5. Informática I
-----------------------
-    </pre>
+<h2>9. Requerimientos del Sistema</h2>
+<ul>
+    <li>Compilador compatible con C++17</li>
+    <li>Bibliotecas cliente de PostgreSQL (libpq)</li>
+    <li>Servidor PostgreSQL (versión 12+)</li>
+    <li>Esquema de base de datos preconfigurado</li>
+</ul>
 
-  <pre>
-Facultad: Sistemas de Comunicación
-  Carrera: Ingeniería en Sistemas
-    Sección: A
---------------------------
-Información del Estudiante
---------------------------
-Carnet: 2294-24-19629
-Nombre: Ricardo Jose Marquez Garcia
-Fecha de Nacimiento: 21/10/2004
-Edad: 20 años
-Carrera: Ingeniería en Sistemas
-Semestre: 1
-Sección: A
---------------------------
-Cursos:
-  1. Introducción a la Programación
-  2. Matemáticas Básicas
-  3. Física I
-  4. Lógica de Sistemas
-  5. Informática I
-----------------------
-    </pre>
+<h2>10. Flujo de Trabajo</h2>
+<p>El sistema sigue este flujo de operación:</p>
+<ol>
+    <li>Establece conexión a base de datos</li>
+    <li>Presenta menú principal</li>
+    <li>Procesa selección del usuario</li>
+    <li>Valida todas las entradas</li>
+    <li>Ejecuta operaciones en base de datos</li>
+    <li>Muestra resultados</li>
+    <li>Regresa al menú principal</li>
+</ol>
 
-  <h3>Opción 2: Buscar por Facultad</h3>
-    <p>Si elegimos la opción 2, nos pedirá seleccionar la facultad:</p>
-    <pre>
-----------
-   Menú
-----------
-1. Finanzas Económicas
-2. Sistemas de Comunicación
-3. Medicina y Salud
-Seleccione una opción:
-    </pre>
+<h3>Ejemplo de Flujo de Registro</h3>
+<pre>
+1. Seleccionar facultad (Finanzas Económicas, Sistemas de Comunicación, Medicina y Salud)
+2. Seleccionar carrera según facultad
+3. Seleccionar semestre (1-10)
+4. Seleccionar sección (A/B/C)
+5. Ingresar datos del estudiante:
+   - Primer nombre (obligatorio)
+   - Segundo nombre (opcional)
+   - Primer apellido (obligatorio)
+   - Segundo apellido (opcional)
+   - Fecha de nacimiento (DD-MM-AAAA)
+6. El sistema genera carnet automáticamente
+7. El sistema asigna cursos automáticamente
+8. Los datos se guardan en PostgreSQL
+</pre>
 
-  <p>Después de seleccionar la facultad, podremos elegir la carrera:</p>
-    <pre>
-----------
-   Menú
-----------
-Facultad: Finanzas Económicas
-1. Administración de Empresas
-2. Auditoría
-Seleccione una opción: 2
-    </pre>
+<h2>11. Esquema Detallado de la Base de Datos</h2>
+<p>La base de datos PostgreSQL incluye estas tablas clave:</p>
 
-  <p>Luego, tendremos que seleccionar la sección en la que deseamos realizar la búsqueda:</p>
-    <pre>
-Seleccione la sección (A/B): A
-    </pre>
+<h3>Tabla: estudiantes</h3>
+<table>
+    <tr><th>Columna</th><th>Tipo</th><th>Descripción</th></tr>
+    <tr><td>id_estudiante</td><td>SERIAL</td><td>Llave primaria</td></tr>
+    <tr><td>carnet</td><td>VARCHAR(20)</td><td>ID estudiantil (formateado)</td></tr>
+    <tr><td>primer_nombre</td><td>VARCHAR(50)</td><td>Primer nombre</td></tr>
+    <tr><td>segundo_nombre</td><td>VARCHAR(50)</td><td>Segundo nombre</td></tr>
+    <tr><td>primer_apellido</td><td>VARCHAR(50)</td><td>Apellido paterno</td></tr>
+    <tr><td>segundo_apellido</td><td>VARCHAR(50)</td><td>Apellido materno</td></tr>
+    <tr><td>fecha_nacimiento</td><td>DATE</td><td>Fecha de nacimiento</td></tr>
+    <tr><td>id_carrera</td><td>INTEGER</td><td>Llave foránea a carrera</td></tr>
+    <tr><td>semestre_actual</td><td>INTEGER</td><td>Semestre actual (1-10)</td></tr>
+    <tr><td>seccion</td><td>CHAR(1)</td><td>Sección (A/B/C)</td></tr>
+</table>
 
-  <p>Al presionar enter, se mostrará la siguiente información:</p>
-    <pre>
----------------------------------
-Estudiantes de la Carrera: Auditoría, Sección A:
----------------------------------
---------------------------
-Información del Estudiante
---------------------------
-Carnet: 2294-24-19458
-Nombre: Emily Giovanna Yancoba Ixcotop
-Fecha de Nacimiento: 09/02/2005
-Edad: 20 años
-Carrera: Auditoría
-Semestre: 1
-Sección: A
---------------------------
-Cursos:
-  1. Introducción a la Auditoría
-  2. Matemáticas Básicas
-  3. Contabilidad I
-  4. Economía General
-  5. Informática I
-----------------------
-----------------------
-¿Desea realizar otra operación? (s/n):
-    </pre>
+<h3>Tabla: matriculacion</h3>
+<table>
+    <tr><th>Columna</th><th>Tipo</th><th>Descripción</th></tr>
+    <tr><td>id_matricula</td><td>SERIAL</td><td>Llave primaria</td></tr>
+    <tr><td>id_estudiante</td><td>INTEGER</td><td>Llave foránea a estudiante</td></tr>
+    <tr><td>id_curso</td><td>INTEGER</td><td>Llave foránea a curso</td></tr>
+    <tr><td>semestre</td><td>INTEGER</td><td>Semestre cursado</td></tr>
+</table>
 
-  <h3>Opción 3: Buscar Estudiante por Carnet</h3>
-    <p>Si deseamos buscar un estudiante por su carnet, debemos regresar al menú principal:</p>
-    <pre>
-------------
-   Menú
-------------
-1. Asignar estudiante
-2. Mostrar estudiantes
-3. Buscar estudiante por Carnet
-4. Eliminar estudiante
-5. Salir
-Seleccione una opción:
-    </pre>
+<h2>12. Consideraciones de Seguridad</h2>
+<ul>
+    <li>Usa consultas parametrizadas para prevenir inyección SQL</li>
+    <li>Cadena de conexión incluye tiempos de espera</li>
+    <li>Reconexión automática para conexiones caídas</li>
+    <li>Datos sensibles (como contraseñas) no están hardcodeadas en producción</li>
+</ul>
 
-  <p>Al elegir la opción 3, se mostrará lo siguiente:</p>
-    <pre>
-Ingrese el carnet a buscar:
-    </pre>
+<h2>13. Características de Rendimiento</h2>
+<ul>
+    <li>Inserción en lote de cursos matriculados</li>
+    <li>Generación eficiente de carnets</li>
+    <li>Pool de conexiones (implícito a través de PostgreSQL)</li>
+    <li>Tablas de base de datos indexadas</li>
+</ul>
 
-  <p>Al ingresar el carnet, por ejemplo, 2294-24-19458, se mostrará la siguiente información:</p>
-    <pre>
---------------------------
-Información del Estudiante
---------------------------
-Carnet: 2294-24-19458
-Nombre: Emily Giovanna Yancoba Ixcotop
-Fecha de Nacimiento: 09/02/2005
-Edad: 20 años
-Carrera: Auditoría
-Semestre: 1
-Sección: A
---------------------------
-Cursos:
-  1. Introducción a la Auditoría
-  2. Matemáticas Básicas
-  3. Contabilidad I
-  4. Economía General
-  5. Informática I
-----------------------
-¿Desea realizar otra operación? (s/n):
-    </pre>
+<h2>14. Limitaciones</h2>
+<ul>
+    <li>Solo interfaz de consola (sin GUI)</li>
+    <li>Sin soporte para múltiples usuarios en esta versión</li>
+    <li>Sin registro de auditoría</li>
+    <li>Sin funcionalidad de backup (depende de backups de PostgreSQL)</li>
+</ul>
 
-  <h3>Opción 4: Eliminar Estudiante</h3>
-    <p>Si deseamos eliminar un estudiante, regresamos al menú principal:</p>
-    <pre>
-------------
-   Menú
-------------
-1. Asignar estudiante
-2. Mostrar estudiantes
-3. Buscar estudiante por Carnet
-4. Eliminar estudiante
-5. Salir
-Seleccione una opción: 4
-    </pre>
-
-  <p>Una vez dentro de la opción 4, tendremos que ingresar el carnet del estudiante que deseamos eliminar, de la siguiente manera:</p>
-    <pre>
-Ingrese el carnet del estudiante a eliminar: 2294-24-19629
-    </pre>
-
-  <p>Luego, nos preguntará si realmente deseamos eliminar al estudiante:</p>
-    <pre>
-¿Está seguro de que desea eliminar al estudiante con carnet 2294-24-19629? (s/n): s
-    </pre>
-
-  <p>Después, mostrará un mensaje que dice:</p>
-    <pre>
-"Estudiante eliminado correctamente."
-    </pre>
-
-  <h3>Opción 5: Salir del Programa</h3>
-    <p>La opción 5 en el menú principal nos permite salir del programa.</p>
+<h2>15. Mejoras Futuras</h2>
+<ul>
+    <li>Agregar autenticación de usuarios</li>
+    <li>Implementar funciones de reportes</li>
+    <li>Añadir seguimiento de calificaciones</li>
+    <li>Soporte para múltiples motores de base de datos</li>
+    <li>Versión con interfaz web</li>
+</ul>
