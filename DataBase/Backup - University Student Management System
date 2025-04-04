@@ -1,0 +1,1014 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 16.3
+-- Dumped by pg_dump version 16.3
+
+-- Started on 2025-04-04 15:16:52
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 228 (class 1255 OID 22227)
+-- Name: actualizar_edad(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.actualizar_edad() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.edad = calcular_edad(NEW.fecha_nacimiento);
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.actualizar_edad() OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1255 OID 22221)
+-- Name: calcular_edad(date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.calcular_edad(fecha_nacimiento date) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN (DATE_PART('year', AGE(fecha_nacimiento)))::INTEGER;
+END;
+$$;
+
+
+ALTER FUNCTION public.calcular_edad(fecha_nacimiento date) OWNER TO postgres;
+
+--
+-- TOC entry 240 (class 1255 OID 22235)
+-- Name: generar_carnet(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.generar_carnet(id_carrera integer) RETURNS character varying
+    LANGUAGE plpgsql
+    AS $_$
+DECLARE
+    codigo_carrera VARCHAR(10);
+    anio_actual VARCHAR(2);
+    consecutivo INTEGER;  -- Corregido de 'consecutive' a 'consecutivo'
+    carnet VARCHAR(20);
+BEGIN
+    -- Obtener código de carrera
+    SELECT codigo INTO STRICT codigo_carrera 
+    FROM carreras 
+    WHERE id_carrera = $1;
+    
+    -- Obtener año actual
+    anio_actual := TO_CHAR(CURRENT_DATE, 'YY');
+    
+    -- Obtener siguiente número consecutivo
+    SELECT COALESCE(
+        NULLIF(
+            MAX(SUBSTRING(carnet FROM 8 FOR 5)::INTEGER), 
+            0
+        ), 
+        0
+    ) + 1 INTO consecutivo
+    FROM estudiantes
+    WHERE carnet LIKE codigo_carrera || '-' || anio_actual || '-%';
+    
+    -- Generar carnet
+    carnet := codigo_carrera || '-' || anio_actual || '-' || LPAD(consecutivo::TEXT, 5, '0');
+    
+    RETURN carnet;
+END;
+$_$;
+
+
+ALTER FUNCTION public.generar_carnet(id_carrera integer) OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 218 (class 1259 OID 22152)
+-- Name: carreras; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.carreras (
+    id_carrera integer NOT NULL,
+    id_facultad integer,
+    nombre character varying(100) NOT NULL,
+    codigo character varying(10) NOT NULL,
+    duracion_semestres integer DEFAULT 10,
+    descripcion text
+);
+
+
+ALTER TABLE public.carreras OWNER TO postgres;
+
+--
+-- TOC entry 217 (class 1259 OID 22151)
+-- Name: carreras_id_carrera_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.carreras_id_carrera_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.carreras_id_carrera_seq OWNER TO postgres;
+
+--
+-- TOC entry 4913 (class 0 OID 0)
+-- Dependencies: 217
+-- Name: carreras_id_carrera_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.carreras_id_carrera_seq OWNED BY public.carreras.id_carrera;
+
+
+--
+-- TOC entry 220 (class 1259 OID 22169)
+-- Name: cursos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cursos (
+    id_curso integer NOT NULL,
+    id_carrera integer,
+    semestre integer NOT NULL,
+    nombre character varying(100) NOT NULL,
+    descripcion text,
+    creditos integer DEFAULT 5
+);
+
+
+ALTER TABLE public.cursos OWNER TO postgres;
+
+--
+-- TOC entry 219 (class 1259 OID 22168)
+-- Name: cursos_id_curso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.cursos_id_curso_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.cursos_id_curso_seq OWNER TO postgres;
+
+--
+-- TOC entry 4914 (class 0 OID 0)
+-- Dependencies: 219
+-- Name: cursos_id_curso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.cursos_id_curso_seq OWNED BY public.cursos.id_curso;
+
+
+--
+-- TOC entry 222 (class 1259 OID 22186)
+-- Name: estudiantes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.estudiantes (
+    id_estudiante integer NOT NULL,
+    carnet character varying(20) NOT NULL,
+    primer_nombre character varying(50) NOT NULL,
+    segundo_nombre character varying(50),
+    primer_apellido character varying(50) NOT NULL,
+    segundo_apellido character varying(50),
+    fecha_nacimiento date NOT NULL,
+    edad integer,
+    id_carrera integer,
+    semestre_actual integer NOT NULL,
+    seccion character(1) NOT NULL,
+    fecha_registro timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.estudiantes OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1259 OID 22185)
+-- Name: estudiantes_id_estudiante_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.estudiantes_id_estudiante_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.estudiantes_id_estudiante_seq OWNER TO postgres;
+
+--
+-- TOC entry 4915 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: estudiantes_id_estudiante_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.estudiantes_id_estudiante_seq OWNED BY public.estudiantes.id_estudiante;
+
+
+--
+-- TOC entry 216 (class 1259 OID 22143)
+-- Name: facultades; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.facultades (
+    id_facultad integer NOT NULL,
+    nombre character varying(100) NOT NULL,
+    descripcion text
+);
+
+
+ALTER TABLE public.facultades OWNER TO postgres;
+
+--
+-- TOC entry 215 (class 1259 OID 22142)
+-- Name: facultades_id_facultad_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.facultades_id_facultad_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.facultades_id_facultad_seq OWNER TO postgres;
+
+--
+-- TOC entry 4916 (class 0 OID 0)
+-- Dependencies: 215
+-- Name: facultades_id_facultad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.facultades_id_facultad_seq OWNED BY public.facultades.id_facultad;
+
+
+--
+-- TOC entry 224 (class 1259 OID 22201)
+-- Name: matriculacion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.matriculacion (
+    id_matricula integer NOT NULL,
+    id_estudiante integer,
+    id_curso integer,
+    semestre integer NOT NULL,
+    fecha_matricula timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    estado character varying(20) DEFAULT 'Activo'::character varying
+);
+
+
+ALTER TABLE public.matriculacion OWNER TO postgres;
+
+--
+-- TOC entry 223 (class 1259 OID 22200)
+-- Name: matriculacion_id_matricula_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.matriculacion_id_matricula_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.matriculacion_id_matricula_seq OWNER TO postgres;
+
+--
+-- TOC entry 4917 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: matriculacion_id_matricula_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.matriculacion_id_matricula_seq OWNED BY public.matriculacion.id_matricula;
+
+
+--
+-- TOC entry 225 (class 1259 OID 22236)
+-- Name: vista_estudiantes_completa; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.vista_estudiantes_completa AS
+ SELECT e.id_estudiante,
+    e.carnet,
+    ((((((e.primer_nombre)::text || ' '::text) ||
+        CASE
+            WHEN (e.segundo_nombre IS NOT NULL) THEN ((e.segundo_nombre)::text || ' '::text)
+            ELSE ''::text
+        END) || (e.primer_apellido)::text) || ' '::text) || (COALESCE(e.segundo_apellido, ''::character varying))::text) AS nombre_completo,
+    e.fecha_nacimiento,
+    e.edad,
+    f.nombre AS facultad,
+    c.nombre AS carrera,
+    e.semestre_actual,
+    e.seccion,
+    e.fecha_registro
+   FROM ((public.estudiantes e
+     JOIN public.carreras c ON ((e.id_carrera = c.id_carrera)))
+     JOIN public.facultades f ON ((c.id_facultad = f.id_facultad)));
+
+
+ALTER VIEW public.vista_estudiantes_completa OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1259 OID 22241)
+-- Name: vista_matriculacion; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.vista_matriculacion AS
+ SELECT m.id_matricula,
+    e.carnet,
+    ((((e.primer_nombre)::text || ' '::text) ||
+        CASE
+            WHEN (e.segundo_nombre IS NOT NULL) THEN ((e.segundo_nombre)::text || ' '::text)
+            ELSE ''::text
+        END) || (e.primer_apellido)::text) AS nombre_estudiante,
+    c.nombre AS carrera,
+    cu.nombre AS curso,
+    cu.semestre AS semestre_curso,
+    m.semestre AS semestre_matricula,
+    m.fecha_matricula,
+    m.estado
+   FROM (((public.matriculacion m
+     JOIN public.estudiantes e ON ((m.id_estudiante = e.id_estudiante)))
+     JOIN public.carreras c ON ((e.id_carrera = c.id_carrera)))
+     JOIN public.cursos cu ON ((m.id_curso = cu.id_curso)));
+
+
+ALTER VIEW public.vista_matriculacion OWNER TO postgres;
+
+--
+-- TOC entry 4720 (class 2604 OID 22155)
+-- Name: carreras id_carrera; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.carreras ALTER COLUMN id_carrera SET DEFAULT nextval('public.carreras_id_carrera_seq'::regclass);
+
+
+--
+-- TOC entry 4722 (class 2604 OID 22172)
+-- Name: cursos id_curso; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cursos ALTER COLUMN id_curso SET DEFAULT nextval('public.cursos_id_curso_seq'::regclass);
+
+
+--
+-- TOC entry 4724 (class 2604 OID 22189)
+-- Name: estudiantes id_estudiante; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiantes ALTER COLUMN id_estudiante SET DEFAULT nextval('public.estudiantes_id_estudiante_seq'::regclass);
+
+
+--
+-- TOC entry 4719 (class 2604 OID 22146)
+-- Name: facultades id_facultad; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.facultades ALTER COLUMN id_facultad SET DEFAULT nextval('public.facultades_id_facultad_seq'::regclass);
+
+
+--
+-- TOC entry 4726 (class 2604 OID 22204)
+-- Name: matriculacion id_matricula; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matriculacion ALTER COLUMN id_matricula SET DEFAULT nextval('public.matriculacion_id_matricula_seq'::regclass);
+
+
+--
+-- TOC entry 4901 (class 0 OID 22152)
+-- Dependencies: 218
+-- Data for Name: carreras; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.carreras (id_carrera, id_facultad, nombre, codigo, duracion_semestres, descripcion) FROM stdin;
+1	1	Administracion de Empresas	1010	10	Carrera de gestión empresarial y administración
+2	1	Auditoria	1020	10	Carrera de auditoría y control financiero
+3	2	Ingenieria en Sistemas	1030	10	Carrera de desarrollo de sistemas informáticos
+4	2	Arquitectura de Redes	1040	10	Carrera de diseño y gestión de redes computacionales
+5	3	Medicina General	1050	10	Carrera de medicina humana general
+6	3	Traumatologia	1060	10	Carrera especializada en traumatología y ortopedia
+7	3	Pediatria	1070	10	Carrera especializada en medicina pediátrica
+\.
+
+
+--
+-- TOC entry 4903 (class 0 OID 22169)
+-- Dependencies: 220
+-- Data for Name: cursos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cursos (id_curso, id_carrera, semestre, nombre, descripcion, creditos) FROM stdin;
+1	1	1	Introducción a la Administración	Conceptos básicos de administración	5
+2	1	1	Matemáticas Básicas	Matemáticas fundamentales para administración	5
+4	1	1	Economía General	Introducción a la teoría económica	5
+5	1	1	Informática I	Fundamentos de informática para administradores	5
+6	1	2	Estadística I	Estadística descriptiva e inferencial básica	5
+8	1	2	Microeconomía	Teoría microeconómica	5
+10	1	2	Informática II	Aplicaciones informáticas para negocios	5
+11	2	1	Introducción a la Auditoría	Conceptos básicos de auditoría	5
+12	2	1	Matemáticas Básicas	Matemáticas fundamentales para auditoría	5
+14	2	1	Economía General	Introducción a la teoría económica	5
+15	2	1	Informática I	Fundamentos de informática para auditores	5
+16	2	2	Estadística I	Estadística descriptiva e inferencial básica	5
+18	2	2	Microeconomía	Teoría microeconómica	5
+20	2	2	Informática II	Aplicaciones informáticas para auditoría	5
+21	3	1	Introducción a la Programación	Fundamentos de programación	5
+22	3	1	Matemáticas Básicas	Matemáticas para ingeniería	5
+23	3	1	Física I	Física general para ingenieros	5
+24	3	1	Lógica de Sistemas	Fundamentos de lógica computacional	5
+25	3	1	Informática I	Introducción a la informática	5
+26	3	2	Programación I	Programación estructurada	5
+27	3	2	Matemáticas Discretas	Matemáticas discretas para computación	5
+28	3	2	Física II	Física aplicada a sistemas	5
+30	3	2	Informática II	Sistemas de información	5
+32	4	1	Introducción a las Redes	Conceptos básicos de redes computacionales	5
+33	4	1	Matemáticas Básicas	Matemáticas para ingeniería	5
+34	4	1	Física I	Física general para ingenieros	5
+35	4	1	Lógica de Sistemas	Fundamentos de lógica computacional	5
+36	4	1	Informática I	Introducción a la informática	5
+38	4	2	Matemáticas Discretas	Matemáticas discretas para computación	5
+39	4	2	Física II	Física aplicada a sistemas	5
+41	4	2	Informática II	Sistemas de información	5
+42	5	1	Anatomía Humana	Estudio de la estructura del cuerpo humano	5
+43	5	1	Biología Celular	Estudio de las células y su funcionamiento	5
+44	5	1	Química General	Fundamentos de química para medicina	5
+45	5	1	Histología	Estudio de los tejidos biológicos	5
+46	5	1	Informática Médica I	Tecnología informática aplicada a medicina	5
+47	5	2	Fisiología Humana	Estudio de las funciones del cuerpo humano	5
+48	5	2	Bioquímica	Química de los procesos biológicos	5
+49	5	2	Genética	Estudio de la herencia biológica	5
+50	5	2	Embriología	Desarrollo del embrión y feto	5
+51	5	2	Informática Médica II	Sistemas de información en salud	5
+52	6	1	Anatomía Humana	Estudio de la estructura del cuerpo humano	5
+53	6	1	Biología Celular	Estudio de las células y su funcionamiento	5
+54	6	1	Química General	Fundamentos de química para medicina	5
+55	6	1	Histología	Estudio de los tejidos biológicos	5
+56	6	1	Informática Médica I	Tecnología informática aplicada a medicina	5
+57	6	2	Fisiología Humana	Estudio de las funciones del cuerpo humano	5
+58	6	2	Bioquímica	Química de los procesos biológicos	5
+59	6	2	Genética	Estudio de la herencia biológica	5
+60	6	2	Embriología	Desarrollo del embrión y feto	5
+61	6	2	Informática Médica II	Sistemas de información en salud	5
+62	7	1	Anatomía Humana	Estudio de la estructura del cuerpo humano	5
+63	7	1	Biología Celular	Estudio de las células y su funcionamiento	5
+64	7	1	Química General	Fundamentos de química para medicina	5
+65	7	1	Histología	Estudio de los tejidos biológicos	5
+66	7	1	Informática Médica I	Tecnología informática aplicada a medicina	5
+67	7	2	Fisiología Humana	Estudio de las funciones del cuerpo humano	5
+68	7	2	Bioquímica	Química de los procesos biológicos	5
+69	7	2	Genética	Estudio de la herencia biológica	5
+70	7	2	Embriología	Desarrollo del embrión y feto	5
+71	7	2	Informática Médica II	Sistemas de información en salud	5
+3	1	1	Contabilidad I	Principios basicos de contabilidad	4
+7	1	2	Contabilidad II	Contabilidad intermedia	4
+9	1	2	Derecho Empresarial	Marco legal empresarial	3
+37	4	2	Redes I	Redes basicas	5
+13	2	1	Contabilidad I	Contabilidad basica	4
+17	2	2	Contabilidad II	Contabilidad intermedia	4
+19	2	2	Derecho Empresarial	Derecho comercial	3
+29	3	2	Algoritmos	Diseno algoritmos	4
+40	4	2	Algoritmos	Diseno algoritmos	4
+78	1	3	Administracion Financiera	Gestion financiera basica	4
+79	1	3	Macroeconomia	Teoria macroeconomica	4
+80	1	3	Gestion de Recursos Humanos	Administracion de personal	4
+81	1	3	Marketing I	Principios de marketing	4
+82	1	3	Informatica III	Sistemas de informacion gerencial	3
+83	1	4	Estadistica II	Estadistica inferencial	4
+84	1	4	Contabilidad III	Contabilidad avanzada	4
+85	1	4	Economia Internacional	Teoria comercio internacional	4
+86	1	4	Derecho Laboral	Legislacion laboral	3
+87	1	4	Informatica IV	Bases de datos empresariales	3
+88	1	5	Gestion de Proyectos	Metodologias de gestion	4
+89	1	5	Finanzas Corporativas	Finanzas avanzadas	4
+90	1	5	Comportamiento Organizacional	Dinamica organizacional	4
+91	1	5	Marketing II	Marketing estrategico	4
+92	1	5	Informatica V	Analisis de datos empresariales	3
+93	1	6	Auditoria I	Fundamentos de auditoria	4
+94	1	6	Gestion de Calidad	Sistemas de calidad	4
+95	1	6	Logistica y Operaciones	Gestion operativa	4
+96	1	6	Investigacion de Mercados	Metodos de investigacion	4
+97	1	6	Informatica VI	ERP y sistemas integrados	3
+98	1	7	Auditoria II	Auditoria avanzada	4
+99	1	7	Gestion Estrategica	Planificacion estrategica	4
+100	1	7	Comercio Internacional	Operaciones internacionales	4
+101	1	7	Etica Empresarial	Etica profesional	3
+102	1	7	Informatica VII	Business Intelligence	3
+103	1	8	Sistemas de Informacion Gerencial	Sistemas de decision	4
+104	1	8	Gestion de Riesgos	Administracion de riesgos	4
+105	1	8	Innovacion Empresarial	Gestion de innovacion	4
+106	1	8	Responsabilidad Social	RSE y sostenibilidad	3
+107	1	8	Informatica VIII	Tecnologias emergentes	3
+108	1	9	Proyecto de Grado I	Inicio proyecto final	5
+109	1	9	Seminario de Administracion	Temas actuales	3
+110	1	9	Emprendimiento	Creacion de empresas	4
+111	1	9	Liderazgo	Desarrollo de liderazgo	3
+112	1	9	Informatica IX	Proyectos tecnologicos	3
+113	1	10	Proyecto de Grado II	Finalizacion proyecto	5
+114	1	10	Seminario de Investigacion	Metodologia investigativa	3
+115	1	10	Consultoria Empresarial	Practica consultiva	4
+116	1	10	Negocios Internacionales	Estrategias globales	4
+117	1	10	Informatica X	Soluciones integrales	3
+118	2	3	Auditoria I	Auditoria financiera	4
+119	2	3	Macroeconomia	Macroeconomia aplicada	4
+120	2	3	Gestion de Recursos Humanos	Gestion de personal	4
+121	2	3	Marketing I	Marketing basico	4
+122	2	3	Informatica III	Sistemas auditoria	3
+123	2	4	Auditoria II	Auditoria operativa	4
+124	2	4	Contabilidad III	Contabilidad avanzada	4
+125	2	4	Economia Internacional	Economia global	4
+126	2	4	Derecho Laboral	Legislacion laboral	3
+127	2	4	Informatica IV	Analisis datos auditoria	3
+128	2	5	Auditoria III	Auditoria avanzada	4
+129	2	5	Finanzas Corporativas	Finanzas empresariales	4
+130	2	5	Comportamiento Organizacional	Comportamiento empresas	4
+131	2	5	Marketing II	Marketing estrategico	4
+132	2	5	Informatica V	Auditoria sistemas	3
+133	2	6	Auditoria IV	Auditoria gestion	4
+134	2	6	Gestion de Calidad	Calidad empresarial	4
+135	2	6	Logistica y Operaciones	Operaciones empresariales	4
+136	2	6	Investigacion de Mercados	Investigacion comercial	4
+137	2	6	Informatica VI	Analisis riesgo informatico	3
+138	2	7	Auditoria V	Auditoria forense	4
+139	2	7	Gestion Estrategica	Planificacion estrategica	4
+140	2	7	Comercio Internacional	Negocios internacionales	4
+141	2	7	Etica Empresarial	Etica profesional	3
+142	2	7	Informatica VII	Fraude informatico	3
+143	2	8	Auditoria VI	Auditoria gubernamental	4
+144	2	8	Gestion de Riesgos	Riesgos empresariales	4
+145	2	8	Innovacion Empresarial	Innovacion organizacional	4
+146	2	8	Responsabilidad Social	RSE corporativa	3
+147	2	8	Informatica VIII	Controles informaticos	3
+148	2	9	Proyecto de Grado I	Proyecto inicial	5
+149	2	9	Seminario de Auditoria	Temas actuales	3
+150	2	9	Emprendimiento	Creacion empresas	4
+151	2	9	Liderazgo	Habilidades directivas	3
+152	2	9	Informatica IX	Proyectos auditoria	3
+153	2	10	Proyecto de Grado II	Proyecto final	5
+154	2	10	Seminario de Investigacion	Metodologia investigacion	3
+155	2	10	Consultoria Empresarial	Practica profesional	4
+156	2	10	Negocios Internacionales	Globalizacion	4
+157	2	10	Informatica X	Soluciones auditoria	3
+158	3	3	Programacion II	Programacion estructurada	5
+159	3	3	Estructuras de Datos	Estructuras avanzadas	5
+160	3	3	Calculo I	Calculo diferencial	4
+161	3	3	Electronica Digital	Electronica basica	4
+162	3	3	Informatica III	Programacion orientada objetos	4
+163	3	4	Programacion III	Programacion avanzada	5
+164	3	4	Bases de Datos I	Bases datos relacionales	5
+165	3	4	Calculo II	Calculo integral	4
+166	3	4	Circuitos Electricos	Circuitos electronicos	4
+167	3	4	Informatica IV	Interfaces usuario	4
+168	3	5	Sistemas Operativos	Sistemas operativos	5
+169	3	5	Bases de Datos II	Bases datos avanzadas	5
+170	3	5	Redes de Computadoras I	Redes computacionales	4
+171	3	5	Ingenieria de Software I	Ingenieria software	4
+172	3	5	Informatica V	Desarrollo aplicaciones	4
+173	3	6	Arquitectura de Computadoras	Arquitectura computadores	5
+174	3	6	Redes de Computadoras II	Redes avanzadas	5
+175	3	6	Ingenieria de Software II	Diseno software	4
+176	3	6	Inteligencia Artificial	IA basica	4
+177	3	6	Informatica VI	Aplicaciones moviles	4
+178	3	7	Compiladores	Diseno compiladores	5
+179	3	7	Sistemas Distribuidos	Sistemas distribuidos	5
+180	3	7	Seguridad Informatica	Seguridad computacional	4
+181	3	7	Proyecto de Software I	Proyecto desarrollo	4
+182	3	7	Informatica VII	Computacion en nube	4
+183	3	8	Administracion de Proyectos	Gestion proyectos TI	5
+184	3	8	Sistemas Embebidos	Sistemas embebidos	5
+185	3	8	Cloud Computing	Computacion nube	4
+186	3	8	Proyecto de Software II	Proyecto avanzado	4
+187	3	8	Informatica VIII	Tecnologias emergentes	4
+188	3	9	Proyecto de Grado I	Proyecto grado inicial	5
+189	3	9	Seminario de Sistemas	Temas actuales TI	3
+190	3	9	Big Data	Analisis datos masivos	4
+191	3	9	Machine Learning	Aprendizaje automatico	4
+192	3	9	Informatica IX	Proyectos innovacion	4
+193	3	10	Proyecto de Grado II	Proyecto grado final	5
+194	3	10	Seminario de Investigacion	Investigacion TI	3
+195	3	10	Blockchain	Tecnologia blockchain	4
+196	3	10	Ciberseguridad	Seguridad informatica	4
+197	3	10	Informatica X	Soluciones integrales	4
+198	4	3	Redes II	Redes intermedias	5
+199	4	3	Estructuras de Datos	Estructuras datos	5
+200	4	3	Calculo I	Calculo diferencial	4
+201	4	3	Electronica Digital	Electronica digital	4
+202	4	3	Informatica III	Protocolos red	4
+203	4	4	Redes III	Redes avanzadas	5
+204	4	4	Bases de Datos I	Bases datos	5
+205	4	4	Calculo II	Calculo integral	4
+206	4	4	Circuitos Electricos	Circuitos electronicos	4
+207	4	4	Informatica IV	Seguridad red	4
+208	4	5	Sistemas Operativos	Sistemas operativos	5
+209	4	5	Bases de Datos II	Bases datos avanzadas	5
+210	4	5	Redes de Computadoras I	Redes computacionales	4
+211	4	5	Ingenieria de Software I	Ingenieria software	4
+212	4	5	Informatica V	Administracion red	4
+213	4	6	Arquitectura de Computadoras	Arquitectura computadores	5
+214	4	6	Redes de Computadoras II	Redes avanzadas	5
+215	4	6	Ingenieria de Software II	Diseno software	4
+216	4	6	Inteligencia Artificial	IA basica	4
+217	4	6	Informatica VI	Redes inalambricas	4
+218	4	7	Compiladores	Diseno compiladores	5
+219	4	7	Sistemas Distribuidos	Sistemas distribuidos	5
+220	4	7	Seguridad Informatica	Seguridad computacional	4
+221	4	7	Proyecto de Redes I	Proyecto redes	4
+222	4	7	Informatica VII	Redes definidas software	4
+223	4	8	Administracion de Proyectos	Gestion proyectos	5
+224	4	8	Sistemas Embebidos	Sistemas embebidos	5
+225	4	8	Cloud Computing	Computacion nube	4
+226	4	8	Proyecto de Redes II	Proyecto avanzado	4
+227	4	8	Informatica VIII	Redes 5G	4
+228	4	9	Proyecto de Grado I	Proyecto grado inicial	5
+229	4	9	Seminario de Redes	Temas actuales redes	3
+230	4	9	Big Data	Analisis datos	4
+231	4	9	Machine Learning	Aprendizaje automatico	4
+232	4	9	Informatica IX	Redes IoT	4
+233	4	10	Proyecto de Grado II	Proyecto grado final	5
+234	4	10	Seminario de Investigacion	Investigacion redes	3
+235	4	10	Blockchain	Tecnologia blockchain	4
+236	4	10	Ciberseguridad	Seguridad informatica	4
+237	4	10	Informatica X	Redes futuras	4
+238	5	3	Microbiologia	Microorganismos patogenos	6
+239	5	3	Patologia General	Enfermedades basicas	5
+240	5	3	Farmacologia I	Farmacos basicos	5
+241	5	3	Semiologia	Signos y sintomas	5
+242	5	3	Informatica Medica III	Sistemas salud	3
+243	5	4	Farmacologia II	Farmacos avanzados	6
+244	5	4	Inmunologia	Sistema inmunologico	5
+245	5	4	Parasitologia	Parasitos humanos	5
+246	5	4	Epidemiologia	Epidemiologia basica	5
+247	5	4	Informatica Medica IV	Historia clinica	3
+248	5	5	Medicina Interna I	Medicina interna basica	6
+249	5	5	Cirugia General	Cirugia basica	5
+250	5	5	Pediatria I	Pediatria basica	5
+251	5	5	Ginecologia y Obstetricia I	Ginecobstetricia basica	5
+252	5	5	Informatica Medica V	Diagnostico asistido	3
+253	5	6	Medicina Interna II	Medicina interna avanzada	6
+254	5	6	Cirugia Especial	Cirugia especializada	5
+255	5	6	Pediatria II	Pediatria avanzada	5
+256	5	6	Ginecologia y Obstetricia II	Ginecobstetricia avanzada	5
+257	5	6	Informatica Medica VI	Telemedicina	3
+258	5	7	Medicina Familiar	Medicina familiar	6
+259	5	7	Psiquiatria	Psiquiatria basica	5
+260	5	7	Dermatologia	Dermatologia basica	5
+261	5	7	Oftalmologia	Oftalmologia basica	5
+262	5	7	Informatica Medica VII	Imagenologia digital	3
+263	5	8	Medicina Legal	Medicina legal	6
+264	5	8	Toxicologia	Toxicologia medica	5
+265	5	8	Radiologia	Radiologia basica	5
+266	5	8	Otorrinolaringologia	ORL basica	5
+267	5	8	Informatica Medica VIII	Robotica medica	3
+268	5	9	Proyecto de Grado I	Proyecto investigacion	5
+269	5	9	Seminario de Medicina	Temas actuales	3
+270	5	9	Medicina Preventiva	Prevencion enfermedades	4
+271	5	9	Medicina Alternativa	Terapias alternativas	4
+272	5	9	Informatica Medica IX	Innovacion medica	3
+273	5	10	Proyecto de Grado II	Proyecto final	5
+274	5	10	Seminario de Investigacion	Investigacion medica	3
+275	5	10	Medicina de Emergencia	Emergencias medicas	4
+276	5	10	Medicina Comunitaria	Salud comunitaria	4
+277	5	10	Informatica Medica X	Tecnologia salud	3
+278	6	3	Microbiologia	Microorganismos patogenos	6
+279	6	3	Patologia General	Enfermedades basicas	5
+280	6	3	Farmacologia I	Farmacos basicos	5
+281	6	3	Semiologia	Signos y sintomas	5
+282	6	3	Informatica Medica III	Sistemas salud	3
+283	6	4	Farmacologia II	Farmacos avanzados	6
+284	6	4	Inmunologia	Sistema inmunologico	5
+285	6	4	Parasitologia	Parasitos humanos	5
+286	6	4	Epidemiologia	Epidemiologia basica	5
+287	6	4	Informatica Medica IV	Historia clinica	3
+288	6	5	Traumatologia I	Traumatologia basica	6
+289	6	5	Cirugia General	Cirugia basica	5
+290	6	5	Pediatria I	Pediatria basica	5
+291	6	5	Ginecologia y Obstetricia I	Ginecobstetricia basica	5
+292	6	5	Informatica Medica V	Diagnostico asistido	3
+293	6	6	Traumatologia II	Traumatologia avanzada	6
+294	6	6	Cirugia Especial	Cirugia especializada	5
+295	6	6	Pediatria II	Pediatria avanzada	5
+296	6	6	Ginecologia y Obstetricia II	Ginecobstetricia avanzada	5
+297	6	6	Informatica Medica VI	Imagenologia	3
+298	6	7	Traumatologia III	Traumatologia especial	6
+299	6	7	Psiquiatria	Psiquiatria basica	5
+300	6	7	Dermatologia	Dermatologia basica	5
+301	6	7	Oftalmologia	Oftalmologia basica	5
+302	6	7	Informatica Medica VII	Telemedicina	3
+303	6	8	Traumatologia IV	Traumatologia compleja	6
+304	6	8	Toxicologia	Toxicologia medica	5
+305	6	8	Radiologia	Radiologia avanzada	5
+306	6	8	Otorrinolaringologia	ORL basica	5
+307	6	8	Informatica Medica VIII	Cirugia asistida	3
+308	6	9	Proyecto de Grado I	Proyecto investigacion	5
+309	6	9	Seminario de Traumatologia	Temas actuales	3
+310	6	9	Medicina Preventiva	Prevencion lesiones	4
+311	6	9	Medicina Alternativa	Terapias alternativas	4
+312	6	9	Informatica Medica IX	Rehabilitacion digital	3
+313	6	10	Proyecto de Grado II	Proyecto final	5
+314	6	10	Seminario de Investigacion	Investigacion medica	3
+315	6	10	Medicina de Emergencia	Emergencias traumaticas	4
+316	6	10	Medicina Comunitaria	Salud comunitaria	4
+317	6	10	Informatica Medica X	Tecnologia ortopedia	3
+318	7	3	Microbiologia	Microorganismos patogenos	6
+319	7	3	Patologia General	Enfermedades basicas	5
+320	7	3	Farmacologia I	Farmacos basicos	5
+321	7	3	Semiologia	Signos y sintomas	5
+322	7	3	Informatica Medica III	Sistemas salud	3
+323	7	4	Farmacologia II	Farmacos avanzados	6
+324	7	4	Inmunologia	Sistema inmunologico	5
+325	7	4	Parasitologia	Parasitos humanos	5
+326	7	4	Epidemiologia	Epidemiologia basica	5
+327	7	4	Informatica Medica IV	Historia clinica	3
+328	7	5	Pediatria I	Pediatria basica	6
+329	7	5	Cirugia General	Cirugia basica	5
+330	7	5	Ginecologia y Obstetricia I	Ginecobstetricia basica	5
+331	7	5	Nutricion Infantil	Nutricion pediatrica	5
+332	7	5	Informatica Medica V	Diagnostico asistido	3
+333	7	6	Pediatria II	Pediatria avanzada	6
+334	7	6	Cirugia Especial	Cirugia especializada	5
+335	7	6	Ginecologia y Obstetricia II	Ginecobstetricia avanzada	5
+336	7	6	Psicologia Infantil	Psicologia pediatrica	5
+337	7	6	Informatica Medica VI	Telepediatria	3
+338	7	7	Pediatria III	Pediatria especial	6
+339	7	7	Psiquiatria Infantil	Psiquiatria pediatrica	5
+340	7	7	Dermatologia Pediatrica	Dermatologia infantil	5
+341	7	7	Oftalmologia Pediatrica	Oftalmologia infantil	5
+342	7	7	Informatica Medica VII	Monitorizacion digital	3
+343	7	8	Pediatria IV	Pediatria compleja	6
+344	7	8	Toxicologia Pediatrica	Toxicologia infantil	5
+345	7	8	Radiologia Pediatrica	Radiologia infantil	5
+346	7	8	Otorrinolaringologia Pediatrica	ORL infantil	5
+347	7	8	Informatica Medica VIII	Tecnologia pediatrica	3
+348	7	9	Proyecto de Grado I	Proyecto investigacion	5
+349	7	9	Seminario de Pediatria	Temas actuales	3
+350	7	9	Medicina Preventiva	Prevencion infantil	4
+351	7	9	Medicina Alternativa	Terapias alternativas	4
+352	7	9	Informatica Medica IX	Innovacion pediatrica	3
+353	7	10	Proyecto de Grado II	Proyecto final	5
+354	7	10	Seminario de Investigacion	Investigacion pediatrica	3
+355	7	10	Medicina de Emergencia	Emergencias pediatricas	4
+356	7	10	Medicina Comunitaria	Salud comunitaria	4
+357	7	10	Informatica Medica X	Pediatria digital	3
+\.
+
+
+--
+-- TOC entry 4905 (class 0 OID 22186)
+-- Dependencies: 222
+-- Data for Name: estudiantes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.estudiantes (id_estudiante, carnet, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, edad, id_carrera, semestre_actual, seccion, fecha_registro) FROM stdin;
+11	1020-25-00001	Emily	Giovanna	Yancoba	Ixcotop	2005-02-09	20	2	3	A	2025-04-03 17:31:57.664842
+12	1030-25-00001	Ricardo	Jose	Marquez	Garcia	2004-10-21	20	3	3	A	2025-04-04 14:37:12.056383
+\.
+
+
+--
+-- TOC entry 4899 (class 0 OID 22143)
+-- Dependencies: 216
+-- Data for Name: facultades; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.facultades (id_facultad, nombre, descripcion) FROM stdin;
+1	Finanzas Economicas	Facultad especializada en ciencias económicas y administrativas
+2	Sistemas de la Comunicacion	Facultad de tecnología y sistemas de información
+3	Medicina y Salud	Facultad de ciencias médicas y de la salud
+\.
+
+
+--
+-- TOC entry 4907 (class 0 OID 22201)
+-- Dependencies: 224
+-- Data for Name: matriculacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.matriculacion (id_matricula, id_estudiante, id_curso, semestre, fecha_matricula, estado) FROM stdin;
+27	11	118	3	2025-04-03 17:31:57.803588	Activo
+28	11	119	3	2025-04-03 17:31:57.805717	Activo
+29	11	120	3	2025-04-03 17:31:57.807179	Activo
+30	11	121	3	2025-04-03 17:31:57.808261	Activo
+31	11	122	3	2025-04-03 17:31:57.809606	Activo
+32	12	158	3	2025-04-04 14:37:12.126013	Activo
+33	12	159	3	2025-04-04 14:37:12.144274	Activo
+34	12	160	3	2025-04-04 14:37:12.144763	Activo
+35	12	161	3	2025-04-04 14:37:12.145443	Activo
+36	12	162	3	2025-04-04 14:37:12.145924	Activo
+\.
+
+
+--
+-- TOC entry 4918 (class 0 OID 0)
+-- Dependencies: 217
+-- Name: carreras_id_carrera_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.carreras_id_carrera_seq', 7, true);
+
+
+--
+-- TOC entry 4919 (class 0 OID 0)
+-- Dependencies: 219
+-- Name: cursos_id_curso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.cursos_id_curso_seq', 357, true);
+
+
+--
+-- TOC entry 4920 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: estudiantes_id_estudiante_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.estudiantes_id_estudiante_seq', 12, true);
+
+
+--
+-- TOC entry 4921 (class 0 OID 0)
+-- Dependencies: 215
+-- Name: facultades_id_facultad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.facultades_id_facultad_seq', 3, true);
+
+
+--
+-- TOC entry 4922 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: matriculacion_id_matricula_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.matriculacion_id_matricula_seq', 36, true);
+
+
+--
+-- TOC entry 4732 (class 2606 OID 22162)
+-- Name: carreras carreras_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.carreras
+    ADD CONSTRAINT carreras_codigo_key UNIQUE (codigo);
+
+
+--
+-- TOC entry 4734 (class 2606 OID 22160)
+-- Name: carreras carreras_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.carreras
+    ADD CONSTRAINT carreras_pkey PRIMARY KEY (id_carrera);
+
+
+--
+-- TOC entry 4736 (class 2606 OID 22179)
+-- Name: cursos cursos_id_carrera_semestre_nombre_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cursos
+    ADD CONSTRAINT cursos_id_carrera_semestre_nombre_key UNIQUE (id_carrera, semestre, nombre);
+
+
+--
+-- TOC entry 4738 (class 2606 OID 22177)
+-- Name: cursos cursos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cursos
+    ADD CONSTRAINT cursos_pkey PRIMARY KEY (id_curso);
+
+
+--
+-- TOC entry 4740 (class 2606 OID 22194)
+-- Name: estudiantes estudiantes_carnet_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiantes
+    ADD CONSTRAINT estudiantes_carnet_key UNIQUE (carnet);
+
+
+--
+-- TOC entry 4742 (class 2606 OID 22192)
+-- Name: estudiantes estudiantes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiantes
+    ADD CONSTRAINT estudiantes_pkey PRIMARY KEY (id_estudiante);
+
+
+--
+-- TOC entry 4730 (class 2606 OID 22150)
+-- Name: facultades facultades_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.facultades
+    ADD CONSTRAINT facultades_pkey PRIMARY KEY (id_facultad);
+
+
+--
+-- TOC entry 4744 (class 2606 OID 22210)
+-- Name: matriculacion matriculacion_id_estudiante_id_curso_semestre_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matriculacion
+    ADD CONSTRAINT matriculacion_id_estudiante_id_curso_semestre_key UNIQUE (id_estudiante, id_curso, semestre);
+
+
+--
+-- TOC entry 4746 (class 2606 OID 22208)
+-- Name: matriculacion matriculacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matriculacion
+    ADD CONSTRAINT matriculacion_pkey PRIMARY KEY (id_matricula);
+
+
+--
+-- TOC entry 4752 (class 2620 OID 22228)
+-- Name: estudiantes trigger_actualizar_edad; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_actualizar_edad BEFORE INSERT OR UPDATE ON public.estudiantes FOR EACH ROW EXECUTE FUNCTION public.actualizar_edad();
+
+
+--
+-- TOC entry 4747 (class 2606 OID 22163)
+-- Name: carreras carreras_id_facultad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.carreras
+    ADD CONSTRAINT carreras_id_facultad_fkey FOREIGN KEY (id_facultad) REFERENCES public.facultades(id_facultad);
+
+
+--
+-- TOC entry 4748 (class 2606 OID 22180)
+-- Name: cursos cursos_id_carrera_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cursos
+    ADD CONSTRAINT cursos_id_carrera_fkey FOREIGN KEY (id_carrera) REFERENCES public.carreras(id_carrera);
+
+
+--
+-- TOC entry 4749 (class 2606 OID 22195)
+-- Name: estudiantes estudiantes_id_carrera_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.estudiantes
+    ADD CONSTRAINT estudiantes_id_carrera_fkey FOREIGN KEY (id_carrera) REFERENCES public.carreras(id_carrera);
+
+
+--
+-- TOC entry 4750 (class 2606 OID 22216)
+-- Name: matriculacion matriculacion_id_curso_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matriculacion
+    ADD CONSTRAINT matriculacion_id_curso_fkey FOREIGN KEY (id_curso) REFERENCES public.cursos(id_curso);
+
+
+--
+-- TOC entry 4751 (class 2606 OID 22211)
+-- Name: matriculacion matriculacion_id_estudiante_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matriculacion
+    ADD CONSTRAINT matriculacion_id_estudiante_fkey FOREIGN KEY (id_estudiante) REFERENCES public.estudiantes(id_estudiante);
+
+
+-- Completed on 2025-04-04 15:16:52
+
+--
+-- PostgreSQL database dump complete
+--
+
