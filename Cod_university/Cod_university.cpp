@@ -1,4 +1,13 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
+﻿// --------------------------------------------------------
+// Author: Ricardo Márquez
+// GitHub: https://github.com/Ricardo21Josee
+// LinkedIn: https://www.linkedin.com/in/ric21marquez
+// Instagram: @mar_quez_g
+// Threads: @mar_quez_g
+// Email: josemarquez21garcia@gmail.com
+// --------------------------------------------------------
+
+#define _CRT_SECURE_NO_WARNINGS
 #define _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
 
 #include <iostream>
