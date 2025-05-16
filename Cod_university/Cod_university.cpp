@@ -51,8 +51,8 @@ private:
 
 public:
     DatabaseManager() {
-        string conn_str = "host=localhost dbname=gestion_universitaria user=ricardo "
-            "password=ricgio921 port=5432 connect_timeout=5";
+        string conn_str = "host=# dbname=# user=# "
+            "password=# port=# connect_timeout=#";
 
         conn = PQconnectdb(conn_str.c_str());
 

@@ -1,6 +1,6 @@
 CC = g++
-CFLAGS = -I"C:\Program Files\PostgreSQL\17\include" -Wall
-LDFLAGS = -L"C:\Program Files\PostgreSQL\17\lib" -lpq
+CFLAGS = -I"C:\Program Files\PostgreSQL\16\include" -Wall
+LDFLAGS = -L"C:\Program Files\PostgreSQL\16\lib" -lpq
 
 all: Cod_university
 
